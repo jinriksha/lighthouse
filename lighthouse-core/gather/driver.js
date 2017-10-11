@@ -217,14 +217,29 @@ class Driver {
   }
 
   /**
-   * Evaluate an expression in the context of the current page.
+   * Evaluate an expression in the context of the current page. If useIsolation is true, the expression
+   * will be evaluated in a content script that has access to the page's DOM but whose JavaScript state
+   * is completely separate.
    * Returns a promise that resolves on the expression's value.
    * @param {string} expression
    * @param {{useIsolation: boolean}=} options
    * @return {!Promise<*>}
    */
-  evaluateAsync(expression, options) {
-    const {useIsolation = true} = options || {};
+  evaluateAsync(expression, options = {}) {
+    const contextIdPromise = options.useIsolation ?
+        this._getOrCreateIsolatedContextId() :
+        Promise.resolve(undefined);
+    return contextIdPromise.then(contextId => this._evaluateInContext(expression, contextId));
+  }
+
+  /**
+   * Evaluate an expression in the given execution context; an undefined contextId implies the main
+   * page without isolation.
+   * @param {string} expression
+   * @param {number|undefined} contextId
+   * @return {!Promise<*>}
+   */
+  _evaluateInContext(expression, contextId) {
     return new Promise((resolve, reject) => {
       // If this gets to 60s and it hasn't been resolved, reject the Promise.
       const asyncTimeout = setTimeout(
@@ -250,11 +265,8 @@ class Driver {
         includeCommandLineAPI: true,
         awaitPromise: true,
         returnByValue: true,
+        contextId,
       };
-
-      if (useIsolation && typeof this._isolatedExecutionContextId === 'number') {
-        evaluationParams.contextId = this._isolatedExecutionContextId;
-      }
 
       this.sendCommand('Runtime.evaluate', evaluationParams).then(result => {
         clearTimeout(asyncTimeout);
@@ -445,7 +457,7 @@ class Driver {
     function checkForQuiet(driver, resolve) {
       if (cancelled) return;
 
-      return driver.evaluateAsync(checkForQuietExpression, {useIsolation: false})
+      return driver.evaluateAsync(checkForQuietExpression)
         .then(timeSinceLongTask => {
           if (cancelled) return;
 
@@ -607,9 +619,13 @@ class Driver {
   }
 
   /**
-   * @return {!Promise}
+   * @return {!Promise<number>}
    */
-  _createIsolatedWorld() {
+  _getOrCreateIsolatedContextId() {
+    if (typeof this._isolatedExecutionContextId === 'number') {
+      return Promise.resolve(this._isolatedExecutionContextId);
+    }
+
     return this.sendCommand('Page.getResourceTree')
       .then(data => {
         const frameId = data.frameTree.frame.id;
@@ -618,7 +634,7 @@ class Driver {
       .then(data => this._isolatedExecutionContextId = data.executionContextId);
   }
 
-  _clearIsolatedWorld() {
+  _clearIsolatedContextId() {
     this._isolatedExecutionContextId = undefined;
   }
 
@@ -650,7 +666,7 @@ class Driver {
     /* eslint-enable max-len */
 
     return this._beginNetworkStatusMonitoring(url)
-      .then(_ => this._clearIsolatedWorld())
+      .then(_ => this._clearIsolatedContextId())
       .then(_ => {
         // These can 'race' and that's OK.
         // We don't want to wait for Page.navigate's resolution, as it can now
@@ -661,7 +677,6 @@ class Driver {
       })
       .then(_ => waitForLoad && this._waitForFullyLoaded(pauseAfterLoadMs,
           networkQuietThresholdMs, cpuQuietThresholdMs, maxWaitMs))
-      .then(_ => this._createIsolatedWorld())
       .then(_ => this._endNetworkStatusMonitoring());
   }
 
@@ -978,7 +993,7 @@ class Driver {
     const globalVarToPopulate = `window['__${funcName}StackTraces']`;
     const collectUsage = () => {
       return this.evaluateAsync(
-          `Array.from(${globalVarToPopulate}).map(item => JSON.parse(item))`, {useIsolation: false})
+          `Array.from(${globalVarToPopulate}).map(item => JSON.parse(item))`)
         .then(result => {
           if (!Array.isArray(result)) {
             throw new Error(

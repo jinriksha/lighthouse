@@ -13,7 +13,7 @@ module.exports = [
     initialUrl: 'http://localhost:10200/a11y/a11y_tester.html',
     url: 'http://localhost:10200/a11y/a11y_tester.html',
     audits: {
-      accesskeys: {
+      'accesskeys': {
         score: false,
         details: {
           items: {
@@ -77,7 +77,7 @@ module.exports = [
           },
         },
       },
-      bypass: {
+      'bypass': {
         score: false,
         details: {
           items: {
@@ -101,7 +101,7 @@ module.exports = [
           },
         },
       },
-      dlitem: {
+      'dlitem': {
         score: false,
         details: {
           items: {
@@ -157,7 +157,7 @@ module.exports = [
           },
         },
       },
-      label: {
+      'label': {
         score: false,
         details: {
           items: {
@@ -181,7 +181,7 @@ module.exports = [
           },
         },
       },
-      list: {
+      'list': {
         score: false,
         details: {
           items: {
@@ -189,7 +189,7 @@ module.exports = [
           },
         },
       },
-      listitem: {
+      'listitem': {
         score: false,
         details: {
           items: {
@@ -213,7 +213,7 @@ module.exports = [
           },
         },
       },
-      tabindex: {
+      'tabindex': {
         score: false,
         details: {
           items: {
