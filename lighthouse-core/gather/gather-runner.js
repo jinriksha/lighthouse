@@ -105,6 +105,7 @@ class GatherRunner {
       .then(_ => driver.cacheNatives())
       .then(_ => driver.registerPerformanceObserver())
       .then(_ => driver.dismissJavaScriptDialogs())
+      .then(_ => driver.setupServiceWorkers(options))
       .then(_ => resetStorage && driver.clearDataForOrigin(options.url));
   }
 

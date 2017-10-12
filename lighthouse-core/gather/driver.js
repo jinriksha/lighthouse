@@ -292,6 +292,34 @@ class Driver {
     });
   }
 
+  setupServiceWorkers(options) {
+    let swTargets = [];
+
+    const onTargetAttached = ({sessionId, targetInfo}) => {
+      console.log({targetInfo}, targetInfo.type); // 'service_worker'
+      swTargets.push(targetInfo);
+      setupSW(sessionId);
+    };
+
+    const onTargetDetached = ({sessionId, targetId}) => {
+      console.log({sessionId, targetId}); // 'service_worker'
+      swTargets = swTargets.filter(target => target.targetId !== targetId);
+    };
+
+    const setupSW = (sessionId) => {
+      this.sendCommand('Target.sendMessageToTarget', { sessionId: sessionId, message: '{"id":1,"method":"Profiler.enable"}'});
+      // throttling
+      // cache
+      // disabled js
+      // Target.sendMessageToTarget({"message":"{\"id\":1,\"method\":\"Profiler.enable\"}","sessionId":"dedicated:91058.2-3"}) = {}
+      // Target.receivedMessageFromTarget({"message":"{\"id\":1,\"result\":{}}","sessionId":"dedicated:91058.2-3","targetId":"dedicated:91058.2"})
+    };
+
+    return this.sendCommand('Target.setAutoAttach', {autoAttach: true, waitForDebuggerOnStart: false})
+      .then(_ => this.on('Target.attachedToTarget', data => onTargetAttached(data)))
+      .then(_ => this.on('Target.detachedFromTarget', data => onTargetDetached(data)));
+  }
+
   getServiceWorkerVersions() {
     return new Promise((resolve, reject) => {
       const versionUpdatedListener = data => {
