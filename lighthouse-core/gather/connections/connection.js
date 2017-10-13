@@ -86,6 +86,7 @@ class Connection {
       this._callbacks.delete(object.id);
 
       return callback.resolve(Promise.resolve().then(_ => {
+//         debugger;
         if (object.error) {
           const logLevel = callback.options && callback.options.silent ? 'verbose' : 'error';
           log.formatProtocol('method <= browser ERR', {method: callback.method}, logLevel);

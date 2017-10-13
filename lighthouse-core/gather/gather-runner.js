@@ -105,7 +105,6 @@ class GatherRunner {
       .then(_ => driver.cacheNatives())
       .then(_ => driver.registerPerformanceObserver())
       .then(_ => driver.dismissJavaScriptDialogs())
-      .then(_ => driver.setupServiceWorkers(options))
       .then(_ => resetStorage && driver.clearDataForOrigin(options.url));
   }
 
@@ -353,6 +352,7 @@ class GatherRunner {
     const gathererResults = {};
 
     return driver.connect()
+      .then(_ => driver.attachToServiceWorkers())
       .then(_ => GatherRunner.loadBlank(driver))
       .then(_ => GatherRunner.setupDriver(driver, gathererResults, options))
 
