@@ -10,7 +10,6 @@ const assert = require('assert');
 
 const acceptableTrace = require('../fixtures/traces/progressive-app-m60.json');
 const brokenTrace = require('../fixtures/traces/airhorner_no_fcp.json');
-const trace = require('../fixtures/traces/response.json');
 
 /* eslint-env mocha */
 describe('Performance: page execution timings audit', () => {
